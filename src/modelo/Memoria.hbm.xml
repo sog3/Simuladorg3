@@ -1,0 +1,39 @@
+<?xml version="1.0"?>
+<!DOCTYPE hibernate-mapping PUBLIC "-//Hibernate/Hibernate Mapping DTD 3.0//EN"
+"http://www.hibernate.org/dtd/hibernate-mapping-3.0.dtd">
+<!-- Generated 17-sep-2019 17:13:29 by Hibernate Tools 4.3.1 -->
+<hibernate-mapping>
+    <class name="modelo.Memoria" table="memoria" catalog="simulador" optimistic-lock="version">
+        <id name="idmemoria" type="java.lang.Integer">
+            <column name="idmemoria" />
+            <generator class="identity" />
+        </id>
+        <property name="descripcion" type="string">
+            <column name="descripcion" length="30" not-null="true" />
+        </property>
+        <property name="tipoparticion" type="string">
+            <column name="tipoparticion" length="30" not-null="true" />
+        </property>
+        <property name="algasigmemo" type="string">
+            <column name="algasigmemo" length="30" not-null="true" />
+        </property>
+        <property name="tammemo" type="int">
+            <column name="tammemo" not-null="true" />
+        </property>
+        <property name="nroparticiones" type="int">
+            <column name="nroparticiones" not-null="true" />
+        </property>
+        <property name="algplanproc" type="string">
+            <column name="algplanproc" length="30" not-null="true" />
+        </property>
+        <property name="quantum" type="int">
+            <column name="quantum" not-null="true" />
+        </property>
+        <set name="procesos" table="proceso" inverse="true" lazy="true" fetch="select">
+            <key>
+                <column name="idmemproc" not-null="true" />
+            </key>
+            <one-to-many class="modelo.Proceso" />
+        </set>
+    </class>
+</hibernate-mapping>

@@ -1,0 +1,39 @@
+<?xml version="1.0"?>
+<!DOCTYPE hibernate-mapping PUBLIC "-//Hibernate/Hibernate Mapping DTD 3.0//EN"
+"http://www.hibernate.org/dtd/hibernate-mapping-3.0.dtd">
+<!-- Generated 17-sep-2019 17:13:29 by Hibernate Tools 4.3.1 -->
+<hibernate-mapping>
+    <class name="modelo.Proceso" table="proceso" catalog="simulador" optimistic-lock="version">
+        <id name="idproceso" type="java.lang.Integer">
+            <column name="idproceso" />
+            <generator class="identity" />
+        </id>
+        <many-to-one name="memoria" class="modelo.Memoria" fetch="select">
+            <column name="idmemproc" not-null="true" />
+        </many-to-one>
+        <property name="tiempoarribo" type="int">
+            <column name="tiempoarribo" not-null="true" />
+        </property>
+        <property name="tamanio" type="int">
+            <column name="tamanio" not-null="true" />
+        </property>
+        <property name="rafagascpu" type="int">
+            <column name="rafagascpu" not-null="true" />
+        </property>
+        <property name="cpu1" type="int">
+            <column name="cpu1" not-null="true" />
+        </property>
+        <property name="entsal1" type="java.lang.Integer">
+            <column name="entsal1" />
+        </property>
+        <property name="cpu2" type="java.lang.Integer">
+            <column name="cpu2" />
+        </property>
+        <property name="entsal2" type="java.lang.Integer">
+            <column name="entsal2" />
+        </property>
+        <property name="cpu3" type="java.lang.Integer">
+            <column name="cpu3" />
+        </property>
+    </class>
+</hibernate-mapping>
