@@ -796,9 +796,9 @@ public class BuscarProg extends javax.swing.JFrame {
     
      
     private void modificarActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_modificarActionPerformed
-        jLabel8.setVisible(true);
+        jLabel8.setVisible(true);        jLabel10.setVisible(true);
+
         jLabel9.setVisible(true);
-        jLabel10.setVisible(true);
         jLabel11.setVisible(true);
         jLabel12.setVisible(false);
         quantuma.setVisible(false);

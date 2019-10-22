@@ -148,7 +148,7 @@ public class AlgBase {
     
     public void ordenarCLporCPU(){
         ArrayList<Proceso> colaOrdenada = new ArrayList<Proceso>();
-        while(!colaListo.isEmpty()){
+        while(!this.colaListo.isEmpty()){
             int mayor = 0;        
             Proceso aux = null;
             for(Proceso x: colaListo){
@@ -172,9 +172,9 @@ public class AlgBase {
                 }
             }
             colaOrdenada.add(0,aux);
-            colaListo.remove(aux);
+            this.colaListo.remove(aux);
         }
-        colaListo = colaOrdenada;
+        this.colaListo = colaOrdenada;
     }
 
     public AlgBase(Recurso CPU, Recurso ES1, Recurso ES2, int cantrafaga, ArrayList<Proceso> colaListo, ArrayList<Proceso> colaBloqueado1, ArrayList<Proceso> colaBloqueado2, Integer procesosVivos, String tipopart, ArrayList<Particion> memoriaVariable, ArrayList<Particion> particiones, Proceso procesoCPU) {
@@ -195,47 +195,51 @@ public class AlgBase {
     
     
     public void cargarCPUconCL() {
-        if ((colaListo.size()>0)&(!CPU.estado())){  //Si hay otro proceso en la cola de listo esperando, lo cargo en CPU
-                        CPU.PID = colaListo.get(0).getIdproceso();
-                        CPU.Tam = colaListo.get(0).getTamanio();
-                        CPU.TA = colaListo.get(0).getTiempoarribo();
-                        CPU.CPU1 = colaListo.get(0).getCpu1();
-                        CPU.ES1 = colaListo.get(0).getEntsal1();
-                        CPU.CPU2 = colaListo.get(0).getCpu2();
-                        CPU.ES2 = colaListo.get(0).getEntsal2();
-                        CPU.CPU3 = colaListo.get(0).getCpu3();
-                        CPU.estado = true;
-                        colaListo.remove(0);
+        if ((this.colaListo.size()>0)&(!this.CPU.estado())){  //Si hay otro proceso en la cola de listo esperando, lo cargo en CPU
+                        this.CPU.PID = this.colaListo.get(0).getIdproceso();
+                        this.CPU.Tam = this.colaListo.get(0).getTamanio();
+                        this.CPU.TA = this.colaListo.get(0).getTiempoarribo();
+                        this.CPU.CPU1 = this.colaListo.get(0).getCpu1();
+                        if (this.cantrafaga==2){
+                        this.CPU.ES1 = this.colaListo.get(0).getEntsal1();
+                        this.CPU.CPU2 = this.colaListo.get(0).getCpu2();}
+                        else if (this.cantrafaga==3){
+                        this.CPU.ES1 = this.colaListo.get(0).getEntsal1();
+                        this.CPU.CPU2 = this.colaListo.get(0).getCpu2();
+                        this.CPU.ES2 = this.colaListo.get(0).getEntsal2();
+                        this.CPU.CPU3 = this.colaListo.get(0).getCpu3();}
+                        this.CPU.estado = true;
+                        this.colaListo.remove(0);
                 }
     }
     
     public void finalizarProceso(int PID){
         System.out.println("entre en finalizar proceso");
         ts += Time;
-        if (tipopart == "Variable") {
+        if (this.tipopart == "Variable") {
             int pos=0;
-            for (int i=0; i < memoriaVariable.size(); i++) {
-               if((memoriaVariable.get(i).ProCargado)==(PID)){
-                   memoriaVariable.get(i).ProCargado = 0;
-                   memoriaVariable.get(i).libre = true;
-                   CPU = new Recurso(0,0,0,0,0,0,0,0,true); //libera la CPU 
+            for (int i=0; i < this.memoriaVariable.size(); i++) {
+               if((this.memoriaVariable.get(i).ProCargado)==(PID)){
+                   this.memoriaVariable.get(i).ProCargado = 0;
+                   this.memoriaVariable.get(i).libre = true;
+                   this.CPU = new Recurso(0,0,0,0,0,0,0,0,true); //libera la CPU 
                    System.out.println(procesosVivos);
                    this.procesosVivos=this.procesosVivos - 1;
-                   System.out.println(procesosVivos);
+                   System.out.println("PROCESOS VIVOS"+this.procesosVivos);
                    pos = i;
                }
             }
-            if ((pos>0)&&(memoriaVariable.get(pos-1).isLibre())){
-                memoriaVariable.get(pos).setTamPart((memoriaVariable.get(pos).getTamPart())+(memoriaVariable.get(pos-1).getTamPart()));
-                memoriaVariable.remove(pos-1);
+            if ((pos>0)&&(this.memoriaVariable.get(pos-1).isLibre())){
+                this.memoriaVariable.get(pos).setTamPart((this.memoriaVariable.get(pos).getTamPart())+(this.memoriaVariable.get(pos-1).getTamPart()));
+                this.memoriaVariable.remove(pos-1);
                 pos--;
             }
-            if ((pos<(memoriaVariable.size()-1))&&(memoriaVariable.get(pos+1).isLibre())){
-                memoriaVariable.get(pos).setTamPart((memoriaVariable.get(pos).getTamPart())+(memoriaVariable.get(pos+1).getTamPart()));
-                memoriaVariable.remove(pos+1);
+            if ((pos<(this.memoriaVariable.size()-1))&&(this.memoriaVariable.get(pos+1).isLibre())){
+                this.memoriaVariable.get(pos).setTamPart((this.memoriaVariable.get(pos).getTamPart())+(this.memoriaVariable.get(pos+1).getTamPart()));
+                this.memoriaVariable.remove(pos+1);
             }
-            if(memoriaVariable.get(memoriaVariable.size()-1).getTamPart()==0){
-                memoriaVariable.remove(memoriaVariable.size()-1);
+            if(this.memoriaVariable.get(this.memoriaVariable.size()-1).getTamPart()==0){
+                this.memoriaVariable.remove(this.memoriaVariable.size()-1);
             }
             
         }else{
@@ -243,34 +247,34 @@ public class AlgBase {
                if((x.ProCargado)==(PID)){
                    x.ProCargado = 0;
                    x.libre = true;
-                   CPU = new Recurso(0,0,0,0,0,0,0,0,true);
-                   procesosVivos--;
+                   this.CPU = new Recurso(0,0,0,0,0,0,0,0,true);
+                   this.procesosVivos--;
                }
            }
         }
     }
     
     public void controlRafaga(){
-        if ((CPU.CPU1 == 0)&(CPU.estado())) {   
-            if(cantrafaga == 1){ //Pregunta si eligio trabajar con una sola rafaga de CPU, 
-                finalizarProceso(CPU.PID);  //en ese caso cuando CPU1 llegue a cero el proceso finaliza
+        if ((this.CPU.CPU1 == 0)&(this.CPU.estado())) {   
+            if(this.cantrafaga == 1){ //Pregunta si eligio trabajar con una sola rafaga de CPU, 
+                finalizarProceso(this.CPU.PID);  //en ese caso cuando CPU1 llegue a cero el proceso finaliza
             } else { 
-                    if(CPU.ES1>0) {//Si tiene 2 rafagas de CPU y la primera ya está en cero, entra acá
-                        procesoCPU = new Proceso(CPU.PID,CPU.TA,CPU.Tam,CPU.CPU1,CPU.ES1,CPU.CPU2,CPU.ES2,CPU.CPU3);
-                        CPU = new Recurso(0,0,0,0,0,0,0,0,true);
-                        colaBloqueado1.add(procesoCPU);
+                    if(this.CPU.ES1>0) {//Si tiene 2 rafagas de CPU y la primera ya está en cero, entra acá
+                        this.procesoCPU = new Proceso(this.CPU.PID,this.CPU.TA,this.CPU.Tam,this.CPU.CPU1,this.CPU.ES1,this.CPU.CPU2,this.CPU.ES2,this.CPU.CPU3);
+                        this.CPU = new Recurso(0,0,0,0,0,0,0,0,true);
+                        this.colaBloqueado1.add(this.procesoCPU);
                     }else{
-                        if(CPU.CPU2 ==0){
-                                colaBloqueado2.add(procesoCPU);
-                                CPU = new Recurso(0,0,0,0,0,0,0,0,true);
-                            if(cantrafaga == 2){
-                                finalizarProceso(CPU.PID);  //en ese caso cuando CPU1 llegue a cero el proceso finaliza
+                        if(this.CPU.CPU2 ==0){
+                                this.colaBloqueado2.add(this.procesoCPU);
+                                this.CPU = new Recurso(0,0,0,0,0,0,0,0,true);
+                            if(this.cantrafaga == 2){
+                                finalizarProceso(this.CPU.PID);  //en ese caso cuando CPU1 llegue a cero el proceso finaliza
                             } else{
-                                if(CPU.ES2>0){
-                                    procesoCPU = new Proceso(CPU.PID,CPU.TA,CPU.Tam,CPU.CPU1,CPU.ES1,CPU.CPU2,CPU.ES2,CPU.CPU3);
+                                if(this.CPU.ES2>0){
+                                    this.procesoCPU = new Proceso(this.CPU.PID,this.CPU.TA,this.CPU.Tam,this.CPU.CPU1,this.CPU.ES1,this.CPU.CPU2,this.CPU.ES2,this.CPU.CPU3);
                                 }else{
-                                    if(CPU.CPU3==0){
-                                        finalizarProceso(CPU.PID);  //en ese caso cuando CPU1 llegue a cero el proceso finaliza
+                                    if(this.CPU.CPU3==0){
+                                        finalizarProceso(this.CPU.PID);  //en ese caso cuando CPU1 llegue a cero el proceso finaliza
                                     }
                                 }
                             }
@@ -281,20 +285,20 @@ public class AlgBase {
     }
     
     public void consumir(){
-        switch (cantrafaga){
-                        case 1: CPU.CPU1--;break;
-                        case 2: if (CPU.CPU1 == 0){
-                                    CPU.CPU2--;
+        switch (this.cantrafaga){
+                        case 1: this.CPU.CPU1--;break;
+                        case 2: if (this.CPU.CPU1 == 0){
+                                    this.CPU.CPU2--;
                                 }else{
-                                   CPU.CPU1--; 
+                                   this.CPU.CPU1--; 
                                 }break;
-                        case 3: if (CPU.CPU1 > 0){
-                                    CPU.CPU1--;
+                        case 3: if (this.CPU.CPU1 > 0){
+                                    this.CPU.CPU1--;
                                 }else{
-                                    if(CPU.CPU2>0){
-                                       CPU.CPU2--;
+                                    if(this.CPU.CPU2>0){
+                                       this.CPU.CPU2--;
                                     }else{
-                                    CPU.CPU3--;
+                                    this.CPU.CPU3--;
                                     }
                                 }break;
                     }

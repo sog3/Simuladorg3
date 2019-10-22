@@ -5,6 +5,11 @@
  */
 package vista;
 
+import Algoritmos.AlgBase;
+import Algoritmos.FCFS;
+import Algoritmos.RoundRobin;
+import Algoritmos.SJF;
+import Algoritmos.SRTF;
 import controlador.Operaciones;
 import java.util.ArrayList;
 import java.util.List;
@@ -13,6 +18,7 @@ import javax.swing.table.DefaultTableModel;
 import modelo.Memoria;
 import modelo.Particion;
 import modelo.Proceso;
+import modelo.Recurso;
 
 /**
  *
@@ -22,11 +28,39 @@ public class NuevoPrograma extends javax.swing.JFrame {
     Operaciones oper = new Operaciones();
     DefaultTableModel procesos = new DefaultTableModel();
     ArrayList<Proceso> listaprocesos = new ArrayList<>();
-    ArrayList<Particion> particiones;
+    ArrayList<Proceso> listp = new ArrayList<>();
+     AlgBase algoritmo;
+     Memoria memoria;
     int tamMemFija = 0;
     int tamPart = 0;
     int mayorProceso = 0;
-    /**
+    int procesosVivos, div = 0; 
+    int cantPart = 0;
+    int tamMemVar = 0;
+    int quantu;
+    int rafaga;
+    float tr, te;
+    int ts = 0;
+    int ta = 0; 
+    int ti = 0;
+    Recurso CPU, ES1, ES2;
+    Proceso proceso, procesoCPU, procesoES1, procesoES2, proc;
+    ArrayList<Particion> particiones;
+    ArrayList<Particion> memoriaVariable; //variable global de lista que simula ser la memoria en particion variable
+    int Time = 0;
+
+    ArrayList<Proceso> colaListo = new ArrayList<Proceso>();    //Aquí estan los procesos que esperam por la CPU
+    ArrayList<Proceso> colaNuevo = new ArrayList<Proceso>();    //Lista con los procesos que esperan por ingresar a la cola de listo y a memoria
+    ArrayList<Proceso> colaBloqueado1 = new ArrayList<Proceso>();    //Lista que contiene los procesos que esperan por ES
+    ArrayList<Proceso> colaBloqueado2 = new ArrayList<Proceso>();    //Lista que contiene los procesos que esperan por ES
+    VentanaSalida ventanaSalida;
+
+    Boolean esvariable = false;
+    Boolean esfija = false;
+    Boolean esrr = false;
+    Proceso procesop;        
+
+   /**
      * Creates new form NuevoPrograma
      */
     public NuevoPrograma() {
@@ -44,24 +78,31 @@ public class NuevoPrograma extends javax.swing.JFrame {
     
     private void llenarListaProcesos(){
        Integer rafcpu = Integer.parseInt((String)rafagascpu.getSelectedItem());
+       rafaga = rafcpu;
        Integer tarribo = Integer.parseInt(tiempoarribo.getText());
        Integer tama = Integer.parseInt(tamanio.getText());
        Integer cpu1_ = Integer.parseInt(cpu1.getText());
-       if ((String)rafagascpu.getSelectedItem()=="2") {
+       if ("2".equals((String)rafagascpu.getSelectedItem())) {
            Integer entsal1_ = Integer.parseInt(entsal1.getText());
            Integer cpu2_ = Integer.parseInt(cpu2.getText());
-           Proceso proceso = new Proceso(rafcpu, tarribo, tama, cpu1_, entsal1_, cpu2_);
-           listaprocesos.add(proceso);
-       } else if ((String)rafagascpu.getSelectedItem()=="3") {
+           proc = new Proceso(rafcpu, tarribo, tama, cpu1_, entsal1_, cpu2_);
+           listaprocesos.add(proc);
+           listp.add(proc);
+           System.out.println("agregando un proceso "+listp.size());
+       } else if ("3".equals((String)rafagascpu.getSelectedItem())) {
            Integer entsal1_ = Integer.parseInt(entsal1.getText());
            Integer cpu2_ = Integer.parseInt(cpu2.getText());
            Integer entsal2_ = Integer.parseInt(entsal2.getText());
            Integer cpu3_ = Integer.parseInt(cpu3.getText());
-           Proceso proceso = new Proceso(rafcpu, tarribo, tama, cpu1_, entsal1_, cpu2_, entsal2_, cpu3_);
-           listaprocesos.add(proceso);
+           proc = new Proceso(rafcpu, tarribo, tama, cpu1_, entsal1_, cpu2_, entsal2_, cpu3_);
+           listaprocesos.add(proc);
+           listp.add(proc);
+           System.out.println("agregando un proceso "+listp.size());
        } else {
-           Proceso proceso = new Proceso(rafcpu, tarribo, tama, cpu1_);
-           listaprocesos.add(proceso);
+           proc = new Proceso(rafcpu, tarribo, tama, cpu1_);
+           listaprocesos.add(proc);
+           listp.add(proc);
+           System.out.println("agregando un proceso "+listp.size());
        }
        
     }
@@ -360,7 +401,7 @@ public class NuevoPrograma extends javax.swing.JFrame {
     }//GEN-LAST:event_algplanpMouseClicked
 
     private void algplanpItemStateChanged(java.awt.event.ItemEvent evt) {//GEN-FIRST:event_algplanpItemStateChanged
-       if ((String)algplanp.getSelectedItem()=="Round Robin"){
+       if ("Round Robin".equals((String)algplanp.getSelectedItem())){
             quantum.setEnabled(true);
     } else{
         quantum.setEnabled(false);
@@ -391,6 +432,7 @@ public class NuevoPrograma extends javax.swing.JFrame {
 
     private void agregarpActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_agregarpActionPerformed
         llenarListaProcesos();
+        listp = listaprocesos;
         tiempoarribo.setText(null);
         tamanio.setText(null);
         cpu1.setText(null);
@@ -420,20 +462,396 @@ public class NuevoPrograma extends javax.swing.JFrame {
     }//GEN-LAST:event_combovariableActionPerformed
 
     private void jButton1ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButton1ActionPerformed
-        // TODO add your handling code here:
+        // aca iria todo el cambalache
+      //Salida salida = new Salida();
+        //salida.setVisible(true);
+        //dispose();
+
+         // if ((String)tipopart.getSelectedItem()=="Variable"){
+              memoria = new Memoria(descripcion.getText(), (String)tipopart.getSelectedItem(),
+                (String)combovariable.getSelectedItem(), Integer.parseInt(tammemo.getText()), 
+                (String)algplanp.getSelectedItem());
+               oper.altaMemoria(memoria, listp);
+               cantPart = memoria.getNroparticiones();
+               tamMemVar = memoria.getTammemo();
+      //  } else {
+         
+      //  }
+        int tama;
+       div = listp.size();
+      
+       
+       
+       for (Proceso lista1 : listp) {  //Recorre la lista para saber cual es
+            tama = lista1.getTamanio();     //el tamaño del proceso mayor
+            if (tama > mayorProceso) {
+                mayorProceso = tama;
+            }
+       }
+       
+        //if (jTextFieldTamMV.getText().isEmpty()) {  //Si el usuario no designó el tamaño de la memoria variable, el tamaño por defecto será el triple del tamaño del proceso mayor
+        //    tamMemVar = mayorProceso*3;
+        //}else{
+        
+            System.out.println("obtuve el tamaño de la memoria"+tamMemVar);
+        //}
+        
+        
+        
+        if ("Fija".equals(memoria.getTipoparticion())){    
+          crearMemFija(cantPart); 
+        } else {
+          if (mayorProceso > tamMemVar) {    //Error si un proceso es mayor que la memoria o particion
+            JOptionPane.showMessageDialog(null, "Uno o más procesos no podrán ejecutarse por su tamaño", "Alerta", JOptionPane.WARNING_MESSAGE);
+          }else{
+              crearMemVar();
+              System.out.println("creo la memoria variable");
+          }
+        }
+        
+        ejecutar();
+       
+       
     }//GEN-LAST:event_jButton1ActionPerformed
 
+      public void ejecutar() {
+        
+        CPU = new Recurso(0, 0, 0, 0, 0, 0, 0, 0, false);
+        ES1 = new Recurso(0, 0, 0, 0, 0, 0, 0, 0, false);
+        ES2 = new Recurso(0, 0, 0, 0, 0, 0, 0, 0, false);
+        emplearAlgoritmo();
+        //Collections.sort(listp); //Ordena la lista por TA
+        colaNuevo = listp;
+        
+        ventanaSalida = new VentanaSalida(algoritmo.particiones , tamMemFija, Time);
+        algoritmo.procesosVivos = listp.size();
+        while (algoritmo.procesosVivos > 0) {  //itera hasta que no hayan mas procesos vivos
+           // Time++;  
+           System.out.println("controlo el tiempo "+Time);
+            tratarColaNuevo(); //Recorre la cola de Nuevo y carga los procesos que cumplan las condiciones a la cola de Listo y a la memoria, con el tipo de asignacion que haya elegido el usuario
+            algoritmo.ejecutar();
+            Time=algoritmo.getTime()+1 ;
+            algoritmo.setTime(Time);
+            tratarES();  
+            
+            ventanaSalida.dibujarMemoria(algoritmo.particiones, algoritmo.memoriaVariable, tamMemFija, Time);   //Por cada unidad de tiempo dibuja una memoria en ese instante
+            ventanaSalida.dibujarCPU(Time, algoritmo.CPU.getPID());
+            ventanaSalida.dibujarES(Time,algoritmo.ES1.getPID());
+            ventanaSalida.dibujarES2(Time,algoritmo.ES2.getPID());
+        }
+        tr = ts - ta;
+        te = tr - ti;
+        tr = Math.round((tr/div) * 100) / 100f;
+        te = Math.round((te/div) * 100) / 100f;
+       /* try{
+          System.out.println("PRUEBAAAAA"+listp.size());
+          System.out.println("rafagasss"+listp.get(0).getRafagascpu());}
+        catch(Exception e){
+            System.out.println("errooooor "+e);
+        }*/
+     // (listaprocesos.get(1).getRafagascpu()+1)    
+        ventanaSalida.mostrarSalida(Time, 0, 0, rafaga);
+        ventanaSalida.setVisible(true); //Cuando ya finalizaron todos los procesos, muestra la salida
+        
+    }   
+    
+        public void crearMemFija(int cantPart) {
+        particiones = new ArrayList<Particion>();
+        tamMemFija = 0;
+        for (int i=0; i < particiones.size(); i++){
+            int nroPart = i+1;
+            do{
+                String TamPart = (JOptionPane.showInputDialog(null, "Ingrese el tamaño de la partición nro " + nroPart));
+                try {
+                    tamPart = Integer.parseInt(TamPart);
+                    if(tamPart<1){ 
+                        JOptionPane.showMessageDialog(this, "Cada partición debe ser mayor a cero", "Error", JOptionPane.ERROR_MESSAGE);
+                    }
+                }
+                catch (NumberFormatException e) {
+                    JOptionPane.showMessageDialog(this, "Ingrese sólo números", "Error", JOptionPane.ERROR_MESSAGE);
+                }
+            }while(tamPart<1);
+            Particion p= new Particion(nroPart, 0, tamPart, true);
+            particiones.add(p);
+            tamMemFija = tamMemFija + tamPart;
+        }
+        int x;
+        int mayorPart = 0;
+        for (Particion lista2 : particiones) {  //Recorre la lista para saber cual es
+            x = lista2.getTamPart();     //el tamaño de la particion mayor
+            if (x > mayorPart) {
+                mayorPart = x;
+            }
+        }
+        if (mayorProceso > mayorPart) {
+           JOptionPane.showMessageDialog(null, "Uno o más procesos no podrán ejecutarse por su tamaño, ingrese nuevamente los tamaños de las particiones", "Alerta", JOptionPane.WARNING_MESSAGE);
+           crearMemFija(cantPart);
+        }
+    }
+    
+    public void crearMemVar(){
+        memoriaVariable = new ArrayList<Particion>();
+        Particion p = new Particion(0,0,tamMemVar,true);
+        memoriaVariable.add(p);
+    }
     private void guardarActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_guardarActionPerformed
         if ((String)tipopart.getSelectedItem()=="Variable"){
         Memoria memoria = new Memoria(descripcion.getText(), (String)tipopart.getSelectedItem(),
                 (String)combovariable.getSelectedItem(), Integer.parseInt(tammemo.getText()), 
                 (String)algplanp.getSelectedItem());
-        oper.altaMemoria(memoria, listaprocesos);
+        oper.altaMemoria(memoria, listp);
         } else {
          
         }
     }//GEN-LAST:event_guardarActionPerformed
 
+    
+        public void tratarColaNuevo() {    
+        int index = 0;
+           // System.out.println("cola nuevo"+colaNuevo.get(index).getTiempoarribo());
+            // System.out.println("esto tiene time "+Time);
+        while (index < (colaNuevo.size())) {    //Recorre todos los procesos que estan en la cola de nuevo
+            boolean cargo = false;
+            if (colaNuevo.get(index).getTiempoarribo() <= Time) {
+                switch (memoria.getTipoparticion()) {
+                    case "Variable" : 
+                        System.out.println("entre en variable");
+                        System.out.println(memoria.getAlgasigmemo());
+                        System.out.println("proceso para first fit "+colaNuevo.get(index));
+                        switch (memoria.getAlgasigmemo()) {
+                            case "First-Fit": cargo = cargaFirstFit(colaNuevo.get(index));    //Si el proceso cumple las condiciones, lo carga en memoria
+                                    break;
+                            case "Worst-Fit": cargo = cargaWorstFit(colaNuevo.get(index));
+                                    break;
+                        } 
+                    break;
+                    case "Fija" : 
+                        switch (memoria.getAlgasigmemo()) {
+                            case "First-Fit": cargo = cargaFirstFit(colaNuevo.get(index));    //Si el proceso cumple las condiciones, lo carga en memoria
+                                    break;
+                            case "Best-Fit": cargo = cargaBestFit(colaNuevo.get(index));    //Si el proceso cumple las condiciones, lo carga en  en memoria
+                                    break;
+                        }
+                    break;
+                }
+            }
+            if (cargo){ 
+                colaListo.add(colaNuevo.get(index));
+                colaNuevo.remove(index);
+                index--;    //Si cargo un proceso se resta, porque como se elimino un elemento de la colaNuevo, entonces el siguiente elemente va ocupar ese lugar,
+            }
+            index++;
+        } 
+        
+    }
+    
+    public void tratarES(){
+        if (algoritmo.ES1.estado()){ //Si esta ocupada la primer E/S descuenta una unidad de tiempo
+            algoritmo.ES1.ES1--;
+        } 
+        if (algoritmo.ES2.estado()){    //Si esta ocupada la segunda E/S descuenta una unidad de tiempo
+            algoritmo.ES2.ES2--;
+        }
+        cargarES1conCB1();  //Si la primer E/S está libre, la carga con un proceso que este en la colaBloqueado1, si lo tuviese
+        cargarES2conCB2();  //Si la segunda E/S está libre, la carga con un proceso que este en la colaBloqueado2, si lo tuviese
+        if ((algoritmo.ES1.estado())&&(algoritmo.ES1.ES1 == 0)) { //Si la primer E/S está ocupada y se le acabó el tiempo, debe abandonar el recurso y volver a la colaListo
+                procesoES1 = new Proceso(ES1.PID,ES1.TA,ES1.Tam,ES1.CPU1,ES1.ES1,ES1.CPU2,ES1.ES2,ES1.CPU3);
+                colaListo.add(procesoES1);
+                algoritmo.ES1 = new Recurso(0,0,0,0,0,0,0,0,true);
+                cargarES1conCB1();
+        }
+        if ((algoritmo.ES2.estado())&&(algoritmo.ES2.ES2 == 0)) { //Si la segunda E/S está ocupada y se le acabó el tiempo, debe abandonar el recurso y volver a la colaListo
+                procesoES2 = new Proceso(ES2.PID,ES2.TA,ES2.Tam,ES2.CPU1,ES2.ES1,ES2.CPU2,ES2.ES2,ES2.CPU3);
+                colaListo.add(procesoES2);
+                algoritmo.ES2 = new Recurso(0,0,0,0,0,0,0,0,true);
+                cargarES2conCB2();
+        }
+        tratarColaNuevo();    //Siempre hacer esto antes de preguntar por colaListo, porque puede ser haya un proceso que este esperando que finalice otro para ocupar ese espacio de memoria
+        if(("SJF".equals(memoria.getAlgplanproc()))||("STRF".equals(memoria.getAlgplanproc()))){
+            algoritmo.ordenarCLporCPU();
+            if(("STRF".equals(memoria.getAlgplanproc()))&&(!colaListo.isEmpty())){
+                Proceso pro_menor = colaListo.get(0);
+                int tiempoProceso = menorTiempoCpuProceso(pro_menor); //obtento el tiempo de CPU del Proceso mas quequeño
+                //creo una clase proceso auxiliar y almaceno los datos del proceso actual en CPU
+                Proceso pro_CPU = new Proceso(CPU.PID,CPU.TA,CPU.Tam,CPU.CPU1,CPU.ES1,CPU.CPU2,CPU.ES2,CPU.CPU3);
+                //obtento el tiempo de CPU del proceso en CPU
+                int tiempoCPU = menorTiempoCpuProceso(pro_CPU);
+                if(tiempoProceso < tiempoCPU){ 
+                    //pregunta si el tiempo del proceso que arriba es menor al tiempo del proceso que esta en CPU
+                    //el proceso que está primero en la cola de listo se apropia de CPU
+                    desalojarProcesoDeCPU();
+                }
+            }
+        }
+        if((quantu==0)&&(algoritmo.CPU.estado())&&("Round Robin".equals(memoria.getAlgplanproc()))){
+            desalojarProcesoDeCPU();
+        }
+        if((!algoritmo.CPU.estado()) && (!algoritmo.colaListo.isEmpty())){
+            algoritmo.cargarCPUconCL();   //Si CPU está libre y hay un elemento en la colaListo, lo asigna a la CPU
+            //if (Quantum.getText().isEmpty()) {  //Si el usuario no designó ningún quantum, el valor por defecto será 2
+            //    quantum = 2;
+            //}else{
+                quantu = memoria.getQuantum(); 
+            //}
+        }
+    }
+    
+    public void desalojarProcesoDeCPU(){
+        Proceso pro = new Proceso(algoritmo.CPU.PID,algoritmo.CPU.TA,algoritmo.CPU.Tam,algoritmo.CPU.CPU1,algoritmo.CPU.ES1,algoritmo.CPU.CPU2,algoritmo.CPU.ES2,algoritmo.CPU.CPU3);
+        algoritmo.colaListo.add(pro);
+        algoritmo.CPU.estado = false;
+    }
+    
+    public int menorTiempoCpuProceso(Proceso aux){
+        //procedimiento para obtener el menor tiempo de cpu del proceso
+        int menor;
+        if (aux.cpu1 == 0){
+            if (aux.cpu2 == 0){
+                menor = aux.cpu3;
+            }else{
+                menor = aux.cpu2;
+            }
+        }else{
+            menor = aux.cpu1;
+        }
+        return menor;
+    }
+    
+    public void cargarES1conCB1(){
+        if((!algoritmo.ES1.estado())&(colaBloqueado1.size()>0)) {
+           algoritmo.ES1.PID = colaBloqueado1.get(0).getIdproceso();
+           algoritmo.ES1.Tam = colaBloqueado1.get(0).getTamanio();
+           algoritmo.ES1.TA = colaBloqueado1.get(0).getTiempoarribo();
+           algoritmo.ES1.CPU1 = colaBloqueado1.get(0).getCpu1();
+           algoritmo.ES1.ES1 = colaBloqueado1.get(0).getEntsal1();
+           algoritmo.ES1.CPU2 = colaBloqueado1.get(0).getCpu2();
+           algoritmo.ES1.ES2 = colaBloqueado1.get(0).getEntsal2();
+           algoritmo.ES1.CPU3 = colaBloqueado1.get(0).getCpu3();
+           algoritmo.ES1.estado = true;
+           algoritmo.colaBloqueado1.remove(0);
+        }
+    }
+    
+     public void emplearAlgoritmo(){
+           procesop = listp.get(0);
+        int cantrafaga = procesop.getRafagascpu();
+        String tipopart = memoria.getTipoparticion();
+        particiones = new ArrayList<Particion>();
+        ArrayList<Proceso>cb1 = listp;
+        ArrayList<Proceso>cb2 = listp;
+        switch (memoria.getAlgplanproc()) 
+        {
+            case "FCFS": algoritmo= new FCFS(CPU, ES1, ES2, cantrafaga, colaListo,  cb1, cb2, procesosVivos, tipopart, memoriaVariable, particiones, procesoCPU);
+                  System.out.println("ENTRE EN FCFS");
+            break;
+            case "Round Robin": algoritmo= new RoundRobin(quantu, CPU, ES1, ES2, cantrafaga, colaListo,  cb1, cb2, procesosVivos, tipopart, memoriaVariable, particiones, procesoCPU);
+            
+            break;
+            case "SJF": algoritmo= new SJF(CPU, ES1, ES2, cantrafaga, colaListo,  cb1, cb2, procesosVivos, tipopart, memoriaVariable, particiones, procesoCPU);
+            
+            break;
+            case "SRTF": algoritmo= new SRTF(CPU, ES1, ES2, cantrafaga, colaListo,  cb1, cb2, procesosVivos, tipopart, memoriaVariable, particiones, procesoCPU);
+  
+            break;
+        }
+    }
+    public void cargarES2conCB2(){
+        if((!algoritmo.ES2.estado())&(colaBloqueado2.size()>0)) {
+           algoritmo.ES2.PID = colaBloqueado2.get(0).getIdproceso();
+           algoritmo.ES2.Tam = colaBloqueado2.get(0).getTamanio();
+           algoritmo.ES2.TA = colaBloqueado2.get(0).getTiempoarribo();
+           algoritmo.ES2.CPU1 = colaBloqueado2.get(0).getCpu1();
+           algoritmo.ES2.ES1 = colaBloqueado2.get(0).getEntsal1();
+           algoritmo.ES2.CPU2 = colaBloqueado2.get(0).getCpu2();
+           algoritmo.ES2.ES2 = colaBloqueado2.get(0).getEntsal2();
+           algoritmo.ES2.CPU3 = colaBloqueado2.get(0).getCpu3();
+           algoritmo.ES2.estado = true;
+           algoritmo.colaBloqueado2.remove(0);
+        }
+    }
+    
+        
+    public boolean cargaFirstFit(Proceso proceso) {
+        boolean cargo = false;
+            if ("Variable".equals(memoria.getTipoparticion())) {
+                
+                for(int i=0; i<memoriaVariable.size(); i++){
+                    if((memoriaVariable.get(i).isLibre())&&(memoriaVariable.get(i).TamPart>=proceso.getTamanio())&&(!cargo)){
+                        Particion nuevo = new Particion(0,proceso.getIdproceso(),proceso.getTamanio(),false);
+                        memoriaVariable.add(i, nuevo);
+                        memoriaVariable.get(i+1).setTamPart((memoriaVariable.get(i+1).getTamPart())-(proceso.getTamanio()));
+                        cargo = true; 
+                    }
+                }
+                if(memoriaVariable.get(memoriaVariable.size()-1).getTamPart()==0){
+                    memoriaVariable.remove(memoriaVariable.size()-1);
+                }
+            } else{
+                for (Particion x: particiones){
+                    if ((x.libre) & (x.TamPart >= proceso.getTamanio()) &(!cargo)) {
+                        x.setProCargado(proceso.getIdproceso());
+                        x.setLibre(false);
+                        cargo = true;
+                    }
+                }
+            }
+        return cargo;
+    }
+    
+    public boolean cargaBestFit(Proceso proceso) {
+        boolean cargo = false;
+        int menor = 0;
+        int pos = 0;
+        boolean existe = false;
+        for (int i = 0; i < particiones.size(); i++) { //Recorro las particiones hasta encontrar la primera que pueda ser asignada
+            if ((particiones.get(i).libre) &(particiones.get(i).TamPart >= proceso.getTamanio())){
+                menor = particiones.get(i).TamPart;     //La guardo para comparar si hay otras menores
+                pos = i;    //Guardo la posicion, porque de no haber otra particion menor, sera asignada a esta
+                existe = true;  //Afirma que existe por lo menos una particion disponible para ser asignada
+                break;
+            }
+        }
+        for (int i = 0; i < particiones.size(); i++){
+            if ((particiones.get(i).libre) & (particiones.get(i).TamPart >= proceso.getTamanio())) {
+                if (particiones.get(i).TamPart < menor) {   //Busco si hay otra particion menor disponible que pueda ser asignada
+                    menor = particiones.get(i).TamPart;
+                    pos = i;
+                }
+            }
+        }
+        if (existe) {
+            particiones.get(pos).ProCargado = proceso.getIdproceso();
+            particiones.get(pos).libre = false;
+            cargo = true;
+        }
+        return cargo;
+    }
+    
+    public boolean cargaWorstFit(Proceso proceso){
+        int mayor = 0;
+        int index = 0;
+        boolean cargo = false;
+        boolean existe = false;
+        for (int i = 0; i < memoriaVariable.size(); i++) {
+            if((memoriaVariable.get(i).isLibre()) && (memoriaVariable.get(i).TamPart >= proceso.getIdproceso()) && (memoriaVariable.get(i).TamPart >= mayor)) {   
+                mayor = memoriaVariable.get(i).TamPart;
+                index = i;
+                existe = true;
+            }
+        }
+        if (existe) {
+            Particion nuevo = new Particion(0,proceso.getIdproceso(),proceso.getTamanio(),false);
+            memoriaVariable.add(index, nuevo);
+            memoriaVariable.get(index+1).setTamPart((memoriaVariable.get(index+1).getTamPart())-(proceso.getTamanio()));
+            cargo = true;
+            if(memoriaVariable.get(memoriaVariable.size()-1).getTamPart()==0){
+                memoriaVariable.remove(memoriaVariable.size()-1);
+            }
+        }  
+        return cargo;
+    }
+    
     private void nropartItemStateChanged(java.awt.event.ItemEvent evt) {//GEN-FIRST:event_nropartItemStateChanged
         
     }//GEN-LAST:event_nropartItemStateChanged
